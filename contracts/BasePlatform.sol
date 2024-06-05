@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 contract BasePlatform {
     address public owner;
     uint256 private rate;
-    uint256 private expireDuration;
+    uint256 private expireDuration; // seconds
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event RateUpdated(uint256 oldRate, uint256 newRate);
@@ -17,6 +17,8 @@ contract BasePlatform {
 
     constructor() {
         owner = msg.sender;
+        rate = 0;
+        expireDuration = 24 * 3600;
         emit OwnershipTransferred(address(0), owner);
     }
 
