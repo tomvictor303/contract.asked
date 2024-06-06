@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy_token_testnet": "npx hardhat run scripts/deploy_token.js --network bsctestnet"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.22.4"
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.4",
+    "@openzeppelin/contracts": "^5.0.2"
+  },
+  "dependencies": {
   }
 }
