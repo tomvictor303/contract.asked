@@ -17,6 +17,7 @@ contract FreelancePlatform is BasePlatform {
         uint256 offeredAt;
         bool isRefunded;
         JobStatus status;
+        bool exists;
     }
 
     // Mapping from job ID to Job struct
@@ -40,6 +41,10 @@ contract FreelancePlatform is BasePlatform {
 
     // Create a new job and transfer ASK tokens from client to contract
     function createJob(uint256 jobId, address freelancer, uint256 budget) public {
+        require(!jobs[jobId].exists, "Job ID already used"); // Check if the jobId is already used
+        // Transfer ASK tokens from client to contract
+        require(askToken.transferFrom(msg.sender, address(this), budget), "Token transfer failed");
+
         uint256 currentTime = block.timestamp;
         jobs[jobId] = Job({
             client: msg.sender,
@@ -48,15 +53,13 @@ contract FreelancePlatform is BasePlatform {
             createdAt: currentTime,
             offeredAt: currentTime,
             isRefunded: false,
-            status: JobStatus.Offer
+            status: JobStatus.Offer,
+            exists: true // Set the exists flag to true
         });
-        emit JobCreated(jobId, msg.sender, budget, currentTime);
 
         // Push job ID to client's list of jobs
         jobsFromClient[msg.sender].push(jobId);
-        
-        // Transfer ASK tokens from client to contract
-        require(askToken.transferFrom(msg.sender, address(this), budget), "Token transfer failed");
+        emit JobCreated(jobId, msg.sender, budget, currentTime);
     }
 
     // Update job status and transfer ASK tokens to freelancer if job is completed
