@@ -32,7 +32,7 @@ contract FreelancePlatform is Ownable {
     IERC20 public askToken;
 
     // Events for job management
-    event JobCreated(uint256 jobId, address client, uint256 budget, uint256 createdAt);
+    event JobCreated(uint256 jobId, address client, address freelancer, uint256 budget, uint256 createdAt);
     event JobUpdated(uint256 jobId, JobStatus status);
     event JobRefunded(uint256 jobId, bool isRefunded);
     event RateUpdated(uint256 oldRate, uint256 newRate);
@@ -87,7 +87,7 @@ contract FreelancePlatform is Ownable {
 
         // Push job ID to client's list of jobs
         jobsFromClient[msg.sender].push(jobId);
-        emit JobCreated(jobId, msg.sender, budget, currentTime);
+        emit JobCreated(jobId, msg.sender, freelancer, budget, currentTime);
     }
 
     // Update job status and transfer ASK tokens to freelancer if job is completed
