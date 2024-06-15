@@ -1,32 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract BasePlatform {
-    address public owner;
-    uint256 private rate;
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract BasePlatform is Ownable {
+    uint256 private rate; // integer rate
     uint256 private expireDuration; // seconds
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event RateUpdated(uint256 oldRate, uint256 newRate);
     event ExpireDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Caller is not the owner");
-        _;
-    }
-
-    constructor() {
-        owner = msg.sender;
+    constructor() Ownable(msg.sender) {
         rate = 0;
         expireDuration = 24 * 3600;
-        emit OwnershipTransferred(address(0), owner);
-    }
-
-    function changeOwner(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "New owner is the zero address");
-        address oldOwner = owner;
-        owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
     }
 
     function setRate(uint256 newRate) public onlyOwner {
@@ -48,9 +34,4 @@ contract BasePlatform {
     function getExpireDuration() public view returns (uint256) {
         return expireDuration;
     }
-
-    function isOwner(address _address) public view returns (bool) {
-        return _address == owner;
-    }
-
 }
