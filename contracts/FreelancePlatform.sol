@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./BasePlatform.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract FreelancePlatform is BasePlatform {
+contract FreelancePlatform is Ownable {
     // Define job statuses
     enum JobStatus { None, Offer, Canceled, Completed }
 
@@ -17,6 +17,10 @@ contract FreelancePlatform is BasePlatform {
         bool isRefunded;
         JobStatus status;
     }
+
+    // Rate and expire duration settings
+    uint256 private rate;
+    uint256 private expireDuration;
 
     // Mapping from job ID to Job struct
     mapping(uint256 => Job) public jobs;
@@ -31,12 +35,40 @@ contract FreelancePlatform is BasePlatform {
     event JobCreated(uint256 jobId, address client, uint256 budget, uint256 createdAt);
     event JobUpdated(uint256 jobId, JobStatus status);
     event JobRefunded(uint256 jobId, bool isRefunded);
+    event RateUpdated(uint256 oldRate, uint256 newRate);
+    event ExpireDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
-    // Constructor to initialize the ASK token address
-    constructor(address _askTokenAddress) {
+    // Constructor to initialize the ASK token address and Ownable
+    constructor(address _askTokenAddress) Ownable(msg.sender) {
         askToken = IERC20(_askTokenAddress);
+        rate = 0;
+        expireDuration = 24 * 3600;
     }
 
+    // Set new rate
+    function setRate(uint256 newRate) public onlyOwner {
+        uint256 oldRate = rate;
+        rate = newRate;
+        emit RateUpdated(oldRate, newRate);
+    }
+
+    // Set new expire duration
+    function setExpireDuration(uint256 newDuration) public onlyOwner {
+        uint256 oldDuration = expireDuration;
+        expireDuration = newDuration;
+        emit ExpireDurationUpdated(oldDuration, newDuration);
+    }
+
+    // Get current rate
+    function getRate() public view returns (uint256) {
+        return rate;
+    }
+
+    // Get current expire duration
+    function getExpireDuration() public view returns (uint256) {
+        return expireDuration;
+    }
+    
     // Create a new job and transfer ASK tokens from client to contract
     function createJob(uint256 jobId, address freelancer, uint256 budget) public {
         require(jobs[jobId].client == address(0), "Job ID already used"); // Check if the jobId is already used
