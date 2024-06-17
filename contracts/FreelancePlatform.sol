@@ -70,6 +70,7 @@ contract FreelancePlatform is Ownable {
     // Create a new job and transfer ASK tokens from client to contract
     function createJob(uint256 jobId, address freelancer, uint256 budget) public {
         require(jobs[jobId].client == address(0), "Job ID is already used"); // Check if the jobId is already used
+        require(msg.sender != freelancer, "Client and freelancer cannot be same"); // Check if the jobId is already used
         // Transfer ASK tokens from client to contract
         askToken.transferFrom(msg.sender, address(this), budget);
 
