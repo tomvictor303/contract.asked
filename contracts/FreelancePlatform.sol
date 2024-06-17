@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract FreelancePlatform is Ownable {
     // Define job statuses
-    enum JobStatus { None, Offer, Canceled, Completed }
+    enum JobStatus { None, Offer, Refunded, Completed }
 
     // Define the Job struct
     struct Job {
@@ -14,7 +14,6 @@ contract FreelancePlatform is Ownable {
         address freelancer;
         uint256 budget;
         uint256 createdAt;
-        bool isRefunded;
         JobStatus status;
     }
 
@@ -34,7 +33,6 @@ contract FreelancePlatform is Ownable {
     // Events for job management
     event JobCreated(uint256 jobId, address client, address freelancer, uint256 budget, uint256 createdAt);
     event JobUpdated(uint256 jobId, JobStatus status);
-    event JobRefunded(uint256 jobId, bool isRefunded);
     event RateUpdated(uint256 oldRate, uint256 newRate);
     event ExpireDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
@@ -71,9 +69,9 @@ contract FreelancePlatform is Ownable {
     
     // Create a new job and transfer ASK tokens from client to contract
     function createJob(uint256 jobId, address freelancer, uint256 budget) public {
-        require(jobs[jobId].client == address(0), "Job ID already used"); // Check if the jobId is already used
+        require(jobs[jobId].client == address(0), "Job ID is already used"); // Check if the jobId is already used
         // Transfer ASK tokens from client to contract
-        require(askToken.transferFrom(msg.sender, address(this), budget), "Token transfer failed");
+        askToken.transferFrom(msg.sender, address(this), budget);
 
         uint256 currentTime = block.timestamp;
         jobs[jobId] = Job({
@@ -81,7 +79,6 @@ contract FreelancePlatform is Ownable {
             freelancer: freelancer,
             budget: budget,
             createdAt: currentTime,
-            isRefunded: false,
             status: JobStatus.Offer
         });
 
@@ -93,29 +90,39 @@ contract FreelancePlatform is Ownable {
     // Update job status and transfer ASK tokens to freelancer if job is completed
     function completeJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
-        require(msg.sender == job.client || msg.sender == job.freelancer, "Caller is not authorized");
-        job.status = JobStatus.Completed;
+        require(job.status != JobStatus.Refunded, "Job is already refunded");
+        require(job.status != JobStatus.Completed, "Job is already completed");
+        require(job.status == JobStatus.Offer, "This job is already completed or refunded");
+        require(msg.sender == job.client || msg.sender == job.freelancer, "Caller is not authorized. Only freelancer or client can complete.");
 
-        // Transfer ASK tokens to freelancer if job is completed
+        // Transfer ASK tokens to freelancer
         require(askToken.transfer(job.freelancer, job.budget), "Token transfer to freelancer failed");
+        // Mark job as complete after transfer
+        job.status = JobStatus.Completed;
         emit JobUpdated(jobId, JobStatus.Completed);
     }
 
     // Mark job as refunded and return ASK tokens to client
-    function refundJob(uint256 jobId) public onlyOwner {
+    function refundJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
         require(msg.sender == job.client, "Caller is not authorized. Only client can refund.");
-        require(!job.isRefunded, "Job is already refunded");
-        job.isRefunded = true;
-        job.status = JobStatus.Canceled;
-
+        require(job.status != JobStatus.Refunded, "Job is already refunded");
+        require(job.status != JobStatus.Completed, "Job is already completed");
+        require(job.status == JobStatus.Offer, "This job is already completed or refunded");
         // Transfer ASK tokens back to client
         require(askToken.transfer(job.client, job.budget), "Token refund failed");
-        emit JobRefunded(jobId, true);
+        // Mark job as refunded
+        job.status = JobStatus.Refunded;
+        emit JobUpdated(jobId, JobStatus.Refunded);
     }
 
     // Get job details
     function getJob(uint256 jobId) public view returns (Job memory) {
         return jobs[jobId];
+    }
+
+    // Get job details
+    function getJobsFromClient(address client) public view returns (uint256[] memory) {
+        return jobsFromClient[client];
     }
 }
