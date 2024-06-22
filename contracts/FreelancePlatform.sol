@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract FreelancePlatform is Ownable {
     // Define job statuses
-    enum JobStatus { None, Offer, Refunded, Completed }
+    enum PayStatus { None, Offer, Refunded, Completed }
 
     // Define the Job struct
     struct Job {
@@ -14,7 +14,7 @@ contract FreelancePlatform is Ownable {
         address freelancer;
         uint256 budget;
         uint256 createdAt;
-        JobStatus status;
+        PayStatus payStatus;
     }
 
     // Rate and expire duration settings
@@ -32,7 +32,7 @@ contract FreelancePlatform is Ownable {
 
     // Events for job management
     event JobCreated(uint256 jobId, address client, address freelancer, uint256 budget, uint256 createdAt);
-    event JobUpdated(uint256 jobId, JobStatus status);
+    event JobUpdated(uint256 jobId, PayStatus payStatus);
     event RateUpdated(uint256 oldRate, uint256 newRate);
     event ExpireDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
@@ -84,7 +84,7 @@ contract FreelancePlatform is Ownable {
             freelancer: freelancer,
             budget: budget,
             createdAt: currentTime,
-            status: JobStatus.Offer
+            payStatus: PayStatus.Offer
         });
 
         // Push job ID to client's list of jobs
@@ -92,33 +92,33 @@ contract FreelancePlatform is Ownable {
         emit JobCreated(jobId, msg.sender, freelancer, budget, currentTime);
     }
 
-    // Update job status and transfer ASK tokens to freelancer if job is completed
+    // Update job payStatus and transfer ASK tokens to freelancer if job is completed
     function completeJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
-        require(job.status != JobStatus.Refunded, "Job is already refunded");
-        require(job.status != JobStatus.Completed, "Job is already completed");
-        require(job.status == JobStatus.Offer, "This job is already completed or refunded");
+        require(job.payStatus != PayStatus.Refunded, "Job is already refunded");
+        require(job.payStatus != PayStatus.Completed, "Job is already completed");
+        require(job.payStatus == PayStatus.Offer, "This job is already completed or refunded");
         require(msg.sender == job.client || msg.sender == job.freelancer, "Caller is not authorized. Only freelancer or client can complete.");
 
         // Transfer ASK tokens to freelancer
         require(askToken.transfer(job.freelancer, job.budget), "Token transfer to freelancer failed");
         // Mark job as complete after transfer
-        job.status = JobStatus.Completed;
-        emit JobUpdated(jobId, JobStatus.Completed);
+        job.payStatus = PayStatus.Completed;
+        emit JobUpdated(jobId, PayStatus.Completed);
     }
 
     // Mark job as refunded and return ASK tokens to client
     function refundJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
         require(msg.sender == job.client, "Caller is not authorized. Only client can refund.");
-        require(job.status != JobStatus.Refunded, "Job is already refunded");
-        require(job.status != JobStatus.Completed, "Job is already completed");
-        require(job.status == JobStatus.Offer, "This job is already completed or refunded");
+        require(job.payStatus != PayStatus.Refunded, "Job is already refunded");
+        require(job.payStatus != PayStatus.Completed, "Job is already completed");
+        require(job.payStatus == PayStatus.Offer, "This job is already completed or refunded");
         // Transfer ASK tokens back to client
         require(askToken.transfer(job.client, job.budget), "Token refund failed");
         // Mark job as refunded
-        job.status = JobStatus.Refunded;
-        emit JobUpdated(jobId, JobStatus.Refunded);
+        job.payStatus = PayStatus.Refunded;
+        emit JobUpdated(jobId, PayStatus.Refunded);
     }
 
     // Get job details
