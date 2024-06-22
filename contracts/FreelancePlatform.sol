@@ -98,7 +98,7 @@ contract FreelancePlatform is Ownable {
         require(job.payStatus != PayStatus.Refunded, "This payment is already refunded");
         require(job.payStatus != PayStatus.Completed, "This payment is already completed");
         require(job.payStatus == PayStatus.Offer, "This payment is already completed or refunded");
-        require(msg.sender == job.client || msg.sender == job.freelancer, "Caller is not authorized. Only payment sender or receiver can complete.");
+        require(msg.sender == job.client || msg.sender == job.freelancer, "Caller is not authorized. Only payment sender or receiver can complete it.");
 
         // Transfer ASK tokens to freelancer
         require(askToken.transfer(job.freelancer, job.budget), "Token transfer to receiver failed");
