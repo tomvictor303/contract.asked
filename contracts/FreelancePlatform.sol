@@ -32,7 +32,7 @@ contract FreelancePlatform is Ownable {
 
     // Events for job management
     event JobCreated(uint256 jobId, address client, address freelancer, uint256 budget, uint256 createdAt);
-    event JobUpdated(uint256 jobId, PayStatus payStatus);
+    event JobPayStatusUpdated(uint256 jobId, PayStatus payStatus);
     event RateUpdated(uint256 oldRate, uint256 newRate);
     event ExpireDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
@@ -104,7 +104,7 @@ contract FreelancePlatform is Ownable {
         require(askToken.transfer(job.freelancer, job.budget), "Token transfer to receiver failed");
         // Mark job as complete after transfer
         job.payStatus = PayStatus.Completed;
-        emit JobUpdated(jobId, PayStatus.Completed);
+        emit JobPayStatusUpdated(jobId, PayStatus.Completed);
     }
 
     // Mark job as refunded and return ASK tokens to client
@@ -118,7 +118,7 @@ contract FreelancePlatform is Ownable {
         require(askToken.transfer(job.client, job.budget), "Token refund failed");
         // Mark job as refunded
         job.payStatus = PayStatus.Refunded;
-        emit JobUpdated(jobId, PayStatus.Refunded);
+        emit JobPayStatusUpdated(jobId, PayStatus.Refunded);
     }
 
     // Get job details
