@@ -70,7 +70,7 @@ contract FreelancePlatform is Ownable {
     // Create a new job and transfer ASK tokens from client to contract
     function createJob(uint256 jobId, address freelancer, uint256 budget) public {
         require(jobs[jobId].client == address(0), "Job ID is already used"); // Check if the jobId is already used
-        require(msg.sender != freelancer, "Client and freelancer cannot be same"); // Check if the jobId is already used
+        require(msg.sender != freelancer, "Payment sender and receiver cannot be same"); // Check if the jobId is already used
         require(
             askToken.allowance(msg.sender, address(this)) >= budget,
             "Your allowance of token-transfer is not enough"
@@ -95,13 +95,13 @@ contract FreelancePlatform is Ownable {
     // Update job payStatus and transfer ASK tokens to freelancer if job is completed
     function completeJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
-        require(job.payStatus != PayStatus.Refunded, "Job is already refunded");
-        require(job.payStatus != PayStatus.Completed, "Job is already completed");
-        require(job.payStatus == PayStatus.Offer, "This job is already completed or refunded");
-        require(msg.sender == job.client || msg.sender == job.freelancer, "Caller is not authorized. Only freelancer or client can complete.");
+        require(job.payStatus != PayStatus.Refunded, "This payment is already refunded");
+        require(job.payStatus != PayStatus.Completed, "This payment is already completed");
+        require(job.payStatus == PayStatus.Offer, "This payment is already completed or refunded");
+        require(msg.sender == job.client || msg.sender == job.freelancer, "Caller is not authorized. Only payment sender or receiver can complete.");
 
         // Transfer ASK tokens to freelancer
-        require(askToken.transfer(job.freelancer, job.budget), "Token transfer to freelancer failed");
+        require(askToken.transfer(job.freelancer, job.budget), "Token transfer to receiver failed");
         // Mark job as complete after transfer
         job.payStatus = PayStatus.Completed;
         emit JobUpdated(jobId, PayStatus.Completed);
@@ -110,10 +110,10 @@ contract FreelancePlatform is Ownable {
     // Mark job as refunded and return ASK tokens to client
     function refundJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
-        require(msg.sender == job.client, "Caller is not authorized. Only client can refund.");
-        require(job.payStatus != PayStatus.Refunded, "Job is already refunded");
-        require(job.payStatus != PayStatus.Completed, "Job is already completed");
-        require(job.payStatus == PayStatus.Offer, "This job is already completed or refunded");
+        require(msg.sender == job.client, "Caller is not authorized. Only payment sender can refund.");
+        require(job.payStatus != PayStatus.Refunded, "This payment is already refunded");
+        require(job.payStatus != PayStatus.Completed, "This payment is already completed");
+        require(job.payStatus == PayStatus.Offer, "This payment is already completed or refunded");
         // Transfer ASK tokens back to client
         require(askToken.transfer(job.client, job.budget), "Token refund failed");
         // Mark job as refunded
