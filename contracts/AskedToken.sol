@@ -736,9 +736,7 @@ pragma solidity ^0.8.20;
 
 
 contract AskToken is ERC20, Ownable {
-
-    mapping(address => bool) public blacklist;
-
+    
     constructor(
         string memory _name,
         string memory _symbol,
@@ -754,14 +752,5 @@ contract AskToken is ERC20, Ownable {
     
     function burn(address account, uint256 amount) public onlyOwner{
         super._burn(account, amount);
-    }
-
-    function _transfer(address from, address to, uint256 value) override internal {
-        require(!blacklist[from] && !blacklist[to], "Either sender or receiver is listed on blacklist");
-        super._transfer(from, to, value);
-    }
-    
-    function setBlacklist(address target, bool state) public onlyOwner {
-        blacklist[target] = state;
     }
 }
