@@ -1,4 +1,4 @@
 Asked Coin
 ASK
 18
-10000000000           ( 10,000,000,000 ) - AskedToken 's initalSupply parameter auto-calculates decimal.
+1000000000           ( 1,000,000,000 ) - AskedToken 's initalSupply parameter auto-calculates decimal.
