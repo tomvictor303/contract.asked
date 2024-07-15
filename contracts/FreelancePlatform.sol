@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {IERC20} from '@openzeppelin/contracts/interfaces/IERC20.sol';
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract FreelancePlatform is Ownable {
+contract FreelancePlatform is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // Define job statuses
     enum PayStatus { None, Offer, Refunded, Completed }
 
@@ -36,12 +38,17 @@ contract FreelancePlatform is Ownable {
     event RateUpdated(uint256 oldRate, uint256 newRate);
     event ExpireDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
-    // Constructor to initialize the ASK token address and Ownable
-    constructor(address _askTokenAddress) Ownable(msg.sender) {
+    // Initializer function (replaces constructor for upgradeable contracts)
+    function initialize(address _askTokenAddress) public initializer {
+        __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
         askToken = IERC20(_askTokenAddress);
         rate = 0;
         expireDuration = 24 * 3600;
     }
+
+    // Function required by UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // Set new rate
     function setRate(uint256 newRate) public onlyOwner {
@@ -95,7 +102,7 @@ contract FreelancePlatform is Ownable {
     // Update job payStatus and transfer ASK tokens to freelancer if job is completed
     function completeJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
-        require(job.client != address(0), "Job ID is not registered on blockchain");
+        require(job.client != address(0), "This Job ID is not registered on blockchain");
         require(job.payStatus != PayStatus.Refunded, "This payment is already refunded");
         require(job.payStatus != PayStatus.Completed, "This payment is already completed");
         require(job.payStatus == PayStatus.Offer, "This payment is already completed or refunded");
@@ -112,7 +119,7 @@ contract FreelancePlatform is Ownable {
     // Mark job as refunded and return ASK tokens to client
     function refundJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
-        require(job.client != address(0), "Job ID is not registered on blockchain");
+        require(job.client != address(0), "This Job ID is not registered on blockchain");
         require(job.payStatus != PayStatus.Refunded, "This payment is already refunded");
         require(job.payStatus != PayStatus.Completed, "This payment is already completed");
         require(job.payStatus == PayStatus.Offer, "This payment is already completed or refunded");
